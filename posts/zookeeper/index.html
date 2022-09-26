@@ -1,0 +1,179 @@
+<!DOCTYPE html><html lang="en" ><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><meta name="generator" content="Jekyll v4.2.2" /><meta property="og:title" content="Zookeeper" /><meta property="og:locale" content="en" /><meta name="description" content="Paxos协议" /><meta property="og:description" content="Paxos协议" /><link rel="canonical" href="/posts/zookeeper/" /><meta property="og:url" content="/posts/zookeeper/" /><meta property="og:site_name" content="Chirpy" /><meta property="og:type" content="article" /><meta property="article:published_time" content="2015-08-16T00:00:00+00:00" /><meta name="twitter:card" content="summary" /><meta property="twitter:title" content="Zookeeper" /><meta name="twitter:site" content="@twitter_username" /> <script type="application/ld+json"> {"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2015-08-16T00:00:00+00:00","datePublished":"2015-08-16T00:00:00+00:00","description":"Paxos协议","headline":"Zookeeper","mainEntityOfPage":{"@type":"WebPage","@id":"/posts/zookeeper/"},"url":"/posts/zookeeper/"}</script><title>Zookeeper | Chirpy</title><link rel="apple-touch-icon" sizes="180x180" href="/assets/img/favicons/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicons/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicons/favicon-16x16.png"><link rel="manifest" href="/assets/img/favicons/site.webmanifest"><link rel="shortcut icon" href="/assets/img/favicons/favicon.ico"><meta name="apple-mobile-web-app-title" content="Chirpy"><meta name="application-name" content="Chirpy"><meta name="msapplication-TileColor" content="#da532c"><meta name="msapplication-config" content="/assets/img/favicons/browserconfig.xml"><meta name="theme-color" content="#ffffff"><link rel="preconnect" href="https://fonts.googleapis.com" ><link rel="dns-prefetch" href="https://fonts.googleapis.com" ><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="dns-prefetch" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com" ><link rel="dns-prefetch" href="https://fonts.googleapis.com" ><link rel="preconnect" href="https://cdn.jsdelivr.net" ><link rel="dns-prefetch" href="https://cdn.jsdelivr.net" ><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato&family=Source+Sans+Pro:wght@400;600;700;900&display=swap"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.11.2/css/all.min.css"><link rel="stylesheet" href="/assets/css/style.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@1.0.1/dist/bootstrap-toc.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/magnific-popup@1/dist/magnific-popup.min.css"> <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script> <script type="text/javascript"> class ModeToggle { static get MODE_KEY() { return "mode"; } static get MODE_ATTR() { return "data-mode"; } static get DARK_MODE() { return "dark"; } static get LIGHT_MODE() { return "light"; } static get ID() { return "mode-toggle"; } constructor() { if (this.hasMode) { if (this.isDarkMode) { if (!this.isSysDarkPrefer) { this.setDark(); } } else { if (this.isSysDarkPrefer) { this.setLight(); } } } let self = this; /* always follow the system prefers */ this.sysDarkPrefers.addEventListener("change", () => { if (self.hasMode) { if (self.isDarkMode) { if (!self.isSysDarkPrefer) { self.setDark(); } } else { if (self.isSysDarkPrefer) { self.setLight(); } } self.clearMode(); } self.notify(); }); } /* constructor() */ get sysDarkPrefers() { return window.matchMedia("(prefers-color-scheme: dark)"); } get isSysDarkPrefer() { return this.sysDarkPrefers.matches; } get isDarkMode() { return this.mode === ModeToggle.DARK_MODE; } get isLightMode() { return this.mode === ModeToggle.LIGHT_MODE; } get hasMode() { return this.mode != null; } get mode() { return sessionStorage.getItem(ModeToggle.MODE_KEY); } /* get the current mode on screen */ get modeStatus() { if (this.isDarkMode || (!this.hasMode && this.isSysDarkPrefer)) { return ModeToggle.DARK_MODE; } else { return ModeToggle.LIGHT_MODE; } } setDark() { $('html').attr(ModeToggle.MODE_ATTR, ModeToggle.DARK_MODE); sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE); } setLight() { $('html').attr(ModeToggle.MODE_ATTR, ModeToggle.LIGHT_MODE); sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE); } clearMode() { $('html').removeAttr(ModeToggle.MODE_ATTR); sessionStorage.removeItem(ModeToggle.MODE_KEY); } /* Notify another plugins that the theme mode has changed */ notify() { window.postMessage({ direction: ModeToggle.ID, message: this.modeStatus }, "*"); } } /* ModeToggle */ const toggle = new ModeToggle(); function flipMode() { if (toggle.hasMode) { if (toggle.isSysDarkPrefer) { if (toggle.isLightMode) { toggle.clearMode(); } else { toggle.setLight(); } } else { if (toggle.isDarkMode) { toggle.clearMode(); } else { toggle.setDark(); } } } else { if (toggle.isSysDarkPrefer) { toggle.setLight(); } else { toggle.setDark(); } } toggle.notify(); } /* flipMode() */ </script><body data-spy="scroll" data-target="#toc" data-topbar-visible="true"><div id="sidebar" class="d-flex flex-column align-items-end"><div class="profile-wrapper text-center"><div id="avatar"> <a href="/" class="mx-auto"> <img src="/assets/sample/avatar.jpg" alt="avatar" onerror="this.style.display='none'"> </a></div><div class="site-title mt-3"> <a href="/">Chirpy</a></div><div class="site-subtitle font-italic">A text-focused Jekyll theme</div></div><ul class="w-100"><li class="nav-item"> <a href="/" class="nav-link"> <i class="fa-fw fas fa-home ml-xl-3 mr-xl-3 unloaded"></i> <span>HOME</span> </a><li class="nav-item"> <a href="/categories/" class="nav-link"> <i class="fa-fw fas fa-stream ml-xl-3 mr-xl-3 unloaded"></i> <span>CATEGORIES</span> </a><li class="nav-item"> <a href="/tags/" class="nav-link"> <i class="fa-fw fas fa-tag ml-xl-3 mr-xl-3 unloaded"></i> <span>TAGS</span> </a><li class="nav-item"> <a href="/archives/" class="nav-link"> <i class="fa-fw fas fa-archive ml-xl-3 mr-xl-3 unloaded"></i> <span>ARCHIVES</span> </a><li class="nav-item"> <a href="/about/" class="nav-link"> <i class="fa-fw fas fa-info-circle ml-xl-3 mr-xl-3 unloaded"></i> <span>ABOUT</span> </a></ul><div class="sidebar-bottom mt-auto d-flex flex-wrap justify-content-center align-items-center"> <button class="mode-toggle btn" aria-label="Switch Mode"> <i class="fas fa-adjust"></i> </button> <span class="icon-border"></span> <a href="https://github.com/github_username" aria-label="github" target="_blank" rel="noopener"> <i class="fab fa-github"></i> </a> <a href="https://twitter.com/twitter_username" aria-label="twitter" target="_blank" rel="noopener"> <i class="fab fa-twitter"></i> </a> <a href=" javascript:location.href = 'mailto:' + ['example','doamin.com'].join('@')" aria-label="email" > <i class="fas fa-envelope"></i> </a> <a href="/feed.xml" aria-label="rss" > <i class="fas fa-rss"></i> </a></div></div><div id="topbar-wrapper"><div id="topbar" class="container d-flex align-items-center justify-content-between h-100 pl-3 pr-3 pl-md-4 pr-md-4"> <span id="breadcrumb"> <span> <a href="/"> Home </a> </span> <span>Zookeeper</span> </span> <i id="sidebar-trigger" class="fas fa-bars fa-fw"></i><div id="topbar-title"> Post</div><i id="search-trigger" class="fas fa-search fa-fw"></i> <span id="search-wrapper" class="align-items-center"> <i class="fas fa-search fa-fw"></i> <input class="form-control" id="search-input" type="search" aria-label="search" autocomplete="off" placeholder="Search..."> </span> <span id="search-cancel" >Cancel</span></div></div><div id="main-wrapper" class="d-flex justify-content-center"><div id="main" class="container pl-xl-4 pr-xl-4"><div class="row"><div id="core-wrapper" class="col-12 col-lg-11 col-xl-9 pr-xl-4"><div class="post pl-1 pr-1 pl-md-2 pr-md-2"><h1 data-toc-skip>Zookeeper</h1><div class="post-meta text-muted"> <span> Posted <em class="" data-ts="1439683200" data-df="ll" data-toggle="tooltip" data-placement="bottom"> Aug 16, 2015 </em> </span><div class="d-flex justify-content-between"> <span> By <em> <a href="https://twitter.com/username">your_full_name</a> </em> </span><div> <span class="readtime" data-toggle="tooltip" data-placement="bottom" title="1100 words"> <em>6 min</em> read</span></div></div></div><div class="post-content"><h3 id="zookeepeer-通信以及心跳机制"><span class="mr-2">Zookeepeer 通信以及心跳机制</span><a href="#zookeepeer-通信以及心跳机制" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h3><h3 id="zookeepeer-leader-选举"><span class="mr-2">Zookeepeer Leader 选举</span><a href="#zookeepeer-leader-选举" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h3><h4 id="如何确定两张选票的大小"><span class="mr-2">如何确定两张选票的大小</span><a href="#如何确定两张选票的大小" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h4><p>注释已经写的很清楚了</p><blockquote><ol><li>选举轮数epoch的比较，这个大的，选票就大<li>选举轮数相同的话，比较(事务号)zxid，事务号大，选票也大<li>选举轮数，事务号都一样，比较节点的id,id大的选票也大</ol></blockquote><div class="language-plaintext highlighter-rouge"><div class="code-header"> <span data-label-text="Plaintext"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="Copied!"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+</pre><td class="rouge-code"><pre>protected boolean totalOrderPredicate(long newId, long newZxid, long newEpoch, long curId, long curZxid, long curEpoch) {
+    LOG.debug("id: " + newId + ", proposed id: " + curId + ", zxid: 0x" +
+            Long.toHexString(newZxid) + ", proposed zxid: 0x" + Long.toHexString(curZxid));
+    if(self.getQuorumVerifier().getWeight(newId) == 0){
+        return false;
+    }
+    
+    /*
+     * We return true if one of the following three cases hold:
+     * 1- New epoch is higher
+     * 2- New epoch is the same as current epoch, but new zxid is higher
+     * 3- New epoch is the same as current epoch, new zxid is the same
+     *  as current zxid, but server id is higher.
+     */
+    
+    return ((newEpoch &gt; curEpoch) || 
+            ((newEpoch == curEpoch) &amp;&amp;
+            ((newZxid &gt; curZxid) || ((newZxid == curZxid) &amp;&amp; (newId &gt; curId)))));
+}
+</pre></table></code></div></div><h4 id="looking-状态时开启一轮新的选举"><span class="mr-2">LOOKING 状态时开启一轮新的选举</span><a href="#looking-状态时开启一轮新的选举" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h4><p>首先是选举的轮数(electionEpoch/logicalclock)加1，并将选票更新为自己广播出去。</p><div class="language-plaintext highlighter-rouge"><div class="code-header"> <span data-label-text="Plaintext"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="Copied!"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre><td class="rouge-code"><pre>synchronized(this){
+	//electionEpoch 轮数增1
+    logicalclock++;
+    //投票给自己（proposedLeader = leader（sid）; proposedZxid = zxid;proposedEpoch = epoch;）
+    updateProposal(getInitId(), getInitLastLoggedZxid(), getPeerEpoch());//sid,zxid,epoch
+}
+
+LOG.info("New election. My id =  " + self.getId() +
+        ", proposed zxid=0x" + Long.toHexString(proposedZxid));
+//发送投票，构造ToSend（this.electionEpoch = logicalclock）
+sendNotifications();
+
+</pre></table></code></div></div><p>另一方面，会接受其他server 过来的投票，收到投票头进行选票的比较</p><h5 id="如果对方选举轮数比较靠前"><span class="mr-2">如果对方选举轮数比较靠前</span><a href="#如果对方选举轮数比较靠前" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h5><blockquote><ol><li>需要更新逻辑时钟（选举轮数），<li>清空收票箱（都是上一轮的投票）<li>因为现在选举轮数又一样了，所以需要再次PK下选票，再广播出去</ol></blockquote><div class="language-plaintext highlighter-rouge"><div class="code-header"> <span data-label-text="Plaintext"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="Copied!"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre><td class="rouge-code"><pre>// If notification &gt; current, replace and send messages out
+// 对方选举轮数靠前比自己大，更新选举轮数（逻辑时钟），清空收票箱（都是上一轮的投票），
+// 再比较（比较proposed）投递过来的与自己的比较，如果对方大了，更新为新的投票，不然还是投给自己
+if (n.electionEpoch &gt; logicalclock) {
+    logicalclock = n.electionEpoch;
+    recvset.clear();
+    if(totalOrderPredicate(n.leader, n.zxid, n.peerEpoch,
+            getInitId(), getInitLastLoggedZxid(), getPeerEpoch())) {
+        updateProposal(n.leader, n.zxid, n.peerEpoch);
+    } else {
+        updateProposal(getInitId(),
+                getInitLastLoggedZxid(),
+                getPeerEpoch());
+    }
+    sendNotifications();
+</pre></table></code></div></div><h5 id="如果当前自己的选举轮数靠前了那还用比嘛"><span class="mr-2">如果当前自己的选举轮数靠前了，那还用比嘛？</span><a href="#如果当前自己的选举轮数靠前了那还用比嘛" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h5><div class="language-plaintext highlighter-rouge"><div class="code-header"> <span data-label-text="Plaintext"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="Copied!"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre><td class="rouge-code"><pre>else if (n.electionEpoch &lt; logicalclock) {
+    if(LOG.isDebugEnabled()){
+        LOG.debug("Notification election epoch is smaller than logicalclock. n.electionEpoch = 0x"
+                + Long.toHexString(n.electionEpoch)
+                + ", logicalclock=0x" + Long.toHexString(logicalclock));
+    }
+    break;
+} 
+</pre></table></code></div></div><h5 id="选举轮数一致ok-那就pk下看谁胜出"><span class="mr-2">选举轮数一致，ok 那就pk下，看谁胜出</span><a href="#选举轮数一致ok-那就pk下看谁胜出" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h5><div class="language-plaintext highlighter-rouge"><div class="code-header"> <span data-label-text="Plaintext"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="Copied!"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre><td class="rouge-code"><pre>//选举轮数一致，比较选票，将胜出的更新为新的选票并广播出去
+} else if (totalOrderPredicate(n.leader, n.zxid, n.peerEpoch,
+        proposedLeader, proposedZxid, proposedEpoch)) {
+    updateProposal(n.leader, n.zxid, n.peerEpoch);
+    sendNotifications();
+}
+</pre></table></code></div></div><h3 id="zookeepeer-读写流程"><span class="mr-2">Zookeepeer 读写流程</span><a href="#zookeepeer-读写流程" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h3><h4 id="read一致性保证-"><span class="mr-2">Read一致性保证  </span><a href="#read一致性保证-" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h4><blockquote><ol><li>尽管zookeeper保证了大多数，但是如果client读取到这些大多数以外的节点,必然会读取到老数据，zookeeper可以通过执行sync来解决<li>watch机制可否？A,B均注册watcher到节点，当A更新节点数据时，server通知B，B执行watcher</ol></blockquote><p><a href="https://phoenixjiangnan.github.io/2016/07/04/distributed%20system/zookeeper/ZooKeeper-Consistency-Guarantees/">ZooKeeper-Consistency-Guarantees</a></p><h4 id="zookeeper之分布式系统中生成全局唯一id-sessionid"><span class="mr-2">Zookeeper之分布式系统中生成全局唯一ID-SessionId</span><a href="#zookeeper之分布式系统中生成全局唯一id-sessionid" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h4><blockquote><ol><li>64位，其中高8位表示机器序列号，即所在的机器，后56为用当前时间的毫秒数随机<li>3.4.6之前使用右移操作，3.4.6使用无符号右移。避免负数导致无法区分机器序列号<li>3.5.0开始不实用毫秒数，而是使用了System.nanoTime避免人为改动系统时间可能导致的问题</ol></blockquote><h5 id="345346之前"><span class="mr-2">3.4.5(3.4.6之前?)</span><a href="#345346之前" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h5><div class="language-plaintext highlighter-rouge"><div class="code-header"> <span data-label-text="Plaintext"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="Copied!"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre><td class="rouge-code"><pre>public static long initializeNextSession(long id) {
+    long nextSid = 0;
+    nextSid = (System.currentTimeMillis() &lt;&lt; 24) &gt;&gt; 8;
+    nextSid =  nextSid | (id &lt;&lt;56);
+    return nextSid;
+}
+</pre></table></code></div></div><h5 id="346"><span class="mr-2">3.4.6</span><a href="#346" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h5><div class="language-plaintext highlighter-rouge"><div class="code-header"> <span data-label-text="Plaintext"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="Copied!"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre><td class="rouge-code"><pre>public static long initializeNextSession(long id) {
+    long nextSid = 0;
+    nextSid = (System.currentTimeMillis() &lt;&lt; 24) &gt;&gt;&gt; 8;
+    nextSid =  nextSid | (id &lt;&lt;56);
+    return nextSid;
+}
+</pre></table></code></div></div><h5 id="350"><span class="mr-2">3.5.0</span><a href="#350" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h5><div class="language-plaintext highlighter-rouge"><div class="code-header"> <span data-label-text="Plaintext"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="Copied!"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+</pre><td class="rouge-code"><pre>public static long initializeNextSession(long id) {
+    long nextSid;
+    nextSid = (Time.currentElapsedTime() &lt;&lt; 24) &gt;&gt;&gt; 8;
+    nextSid =  nextSid | (id &lt;&lt;56);
+    return nextSid;
+}
+/**
+* Returns time in milliseconds as does System.currentTimeMillis(),
+* but uses elapsed time from an arbitrary epoch more like System.nanoTime().
+* The difference is that if somebody changes the system clock,
+* Time.currentElapsedTime will change but nanoTime won't. On the other hand,
+* all of ZK assumes that time is measured in milliseconds.
+* @return  The time in milliseconds from some arbitrary point in time.
+*/
+public static long currentElapsedTime() {
+    return System.nanoTime() / 1000000;
+}
+</pre></table></code></div></div></div><div class="post-tail-wrapper text-muted"><div class="post-meta mb-3"> <i class="far fa-folder-open fa-fw mr-1"></i> <a href='/categories/distributed/'>distributed</a></div><div class="post-tags"> <i class="fa fa-tags fa-fw mr-1"></i> <a href="/tags/distributed/" class="post-tag no-text-decoration" >distributed</a> <a href="/tags/paxos/" class="post-tag no-text-decoration" >Paxos</a> <a href="/tags/zookeeper/" class="post-tag no-text-decoration" >Zookeeper</a></div><div class="post-tail-bottom d-flex justify-content-between align-items-center mt-3 pt-5 pb-2"><div class="license-wrapper"> This post is licensed under <a href="https://creativecommons.org/licenses/by/4.0/"> CC BY 4.0 </a> by the author.</div><div class="share-wrapper"> <span class="share-label text-muted mr-1">Share</span> <span class="share-icons"> <a href="https://twitter.com/intent/tweet?text=Zookeeper+-+Chirpy&url=%2Fposts%2Fzookeeper%2F" data-toggle="tooltip" data-placement="top" title="Twitter" target="_blank" rel="noopener" aria-label="Twitter"> <i class="fa-fw fab fa-twitter"></i> </a> <a href="https://www.facebook.com/sharer/sharer.php?title=Zookeeper+-+Chirpy&u=%2Fposts%2Fzookeeper%2F" data-toggle="tooltip" data-placement="top" title="Facebook" target="_blank" rel="noopener" aria-label="Facebook"> <i class="fa-fw fab fa-facebook-square"></i> </a> <a href="https://t.me/share/url?url=%2Fposts%2Fzookeeper%2F&text=Zookeeper+-+Chirpy" data-toggle="tooltip" data-placement="top" title="Telegram" target="_blank" rel="noopener" aria-label="Telegram"> <i class="fa-fw fab fa-telegram"></i> </a> <i id="copy-link" class="fa-fw fas fa-link small" data-toggle="tooltip" data-placement="top" title="Copy link" data-title-succeed="Link copied successfully!"> </i> </span></div></div></div></div></div><div id="panel-wrapper" class="col-xl-3 pl-2 text-muted"><div class="access"><div id="access-tags"><div class="panel-heading">Trending Tags</div><div class="d-flex flex-wrap mt-3 mb-1 mr-3"> <a class="post-tag" href="/tags/distributed/">distributed</a> <a class="post-tag" href="/tags/datascience/">Datascience</a> <a class="post-tag" href="/tags/ml/">ML</a> <a class="post-tag" href="/tags/java/">Java</a> <a class="post-tag" href="/tags/realtime/">realtime</a> <a class="post-tag" href="/tags/flink/">flink</a> <a class="post-tag" href="/tags/python/">python</a> <a class="post-tag" href="/tags/streamsets/">streamsets</a> <a class="post-tag" href="/tags/search/">Search</a> <a class="post-tag" href="/tags/file/">File</a></div></div></div><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@1.0.1/dist/bootstrap-toc.min.js"></script><div id="toc-wrapper" class="pl-0 pr-4 mb-5"><div class="panel-heading pl-3 pt-2 mb-2">Contents</div><nav id="toc" data-toggle="toc"></nav></div></div></div><div class="row"><div id="tail-wrapper" class="col-12 col-lg-11 col-xl-9 pl-3 pr-3 pr-xl-4"><div id="related-posts" class="mt-5 mb-2 mb-sm-4"><h3 class="pt-2 mt-1 mb-4 ml-1" data-toc-skip>Further Reading</h3><div class="card-deck mb-4"><div class="card"> <a href="/posts/Redis-Cluster3.0/"><div class="card-body"> <em class="small" data-ts="1439424000" data-df="ll" > Aug 13, 2015 </em><h3 class="pt-0 mt-1 mb-3" data-toc-skip>Redis-Cluster初探</h3><div class="text-muted small"><p> 网上看着搭建一套redis集群好麻烦，搜了一圈blog,发现还是官网靠谱Redis cluster tutorial 先安装ruby（ruby安装我还是比较烦的，最开始因为ruby安装复杂，且jekyll需要本地编译环境而放弃了 不过这次用的rvm似乎很顺利就搞定了，jekyll的本地环境配置及主题更换(rvm管理ruby)） 解压修改配置文件redis.conf,然后依次拷贝到其他节...</p></div></div></a></div><div class="card"> <a href="/posts/OSC_ZH/"><div class="card-body"> <em class="small" data-ts="1440374400" data-df="ll" > Aug 24, 2015 </em><h3 class="pt-0 mt-1 mb-3" data-toc-skip>2015 OSC 珠海 流水账</h3><div class="text-muted small"><p> Netty优化 智能心跳 Work线程避免做z阻塞类的操作 减少ChannelHandler的个数使用 不使用IdleStateHandler来做心跳的检查 write VS writeAndFlush 不要设置SO_SNDBUF\SO_RECVBUF PooledByteBuf跨线程使用的坑 减少每个连接或会话的对象...</p></div></div></a></div><div class="card"> <a href="/posts/solr_src_annotation/"><div class="card-body"> <em class="small" data-ts="1434585600" data-df="ll" > Jun 18, 2015 </em><h3 class="pt-0 mt-1 mb-3" data-toc-skip>Solr Code Annotation</h3><div class="text-muted small"><p> Solr Query Syntax and Parsing 查询语法 Common Query Parameters The Standard Query Parser The DisMax Query Parser The Extended DisMax Query Parser Function Queries Local Pa...</p></div></div></a></div></div></div><div class="post-navigation d-flex justify-content-between"> <a href="/posts/soa/" class="btn btn-outline-primary" prompt="Older"><p>RPC分布式服务化SOA以及服务治理</p></a> <a href="/posts/mysql-binlog/" class="btn btn-outline-primary" prompt="Newer"><p>MySQL Binlog</p></a></div></div></div><footer class="row pl-3 pr-3"><div class="col-12 d-flex justify-content-between align-items-center text-muted pl-0 pr-0"><div class="footer-left"><p class="mb-0"> © 2022 <a href="https://twitter.com/username">your_full_name</a>. <span data-toggle="tooltip" data-placement="top" title="Except where otherwise noted, the blog posts on this site are licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) License by the author.">Some rights reserved.</span></p></div><div class="footer-right"><p class="mb-0"> Powered by <a href="https://jekyllrb.com" target="_blank" rel="noopener">Jekyll</a> with <a href="https://github.com/cotes2020/jekyll-theme-chirpy" target="_blank" rel="noopener">Chirpy</a> theme.</p></div></div></footer></div><div id="search-result-wrapper" class="d-flex justify-content-center unloaded"><div class="col-12 col-sm-11 post-content"><div id="search-hints"><div id="access-tags"><div class="panel-heading">Trending Tags</div><div class="d-flex flex-wrap mt-3 mb-1 mr-3"> <a class="post-tag" href="/tags/distributed/">distributed</a> <a class="post-tag" href="/tags/datascience/">Datascience</a> <a class="post-tag" href="/tags/ml/">ML</a> <a class="post-tag" href="/tags/java/">Java</a> <a class="post-tag" href="/tags/realtime/">realtime</a> <a class="post-tag" href="/tags/flink/">flink</a> <a class="post-tag" href="/tags/python/">python</a> <a class="post-tag" href="/tags/streamsets/">streamsets</a> <a class="post-tag" href="/tags/search/">Search</a> <a class="post-tag" href="/tags/file/">File</a></div></div></div><div id="search-results" class="d-flex flex-wrap justify-content-center text-muted mt-3"></div></div></div></div><div id="mask"></div><a id="back-to-top" href="#" aria-label="back-to-top" class="btn btn-lg btn-box-shadow" role="button"> <i class="fas fa-angle-up"></i> </a><div id="notification" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-animation="true" data-autohide="false"><div class="toast-header"> <button type="button" class="ml-2 ml-auto close" data-dismiss="toast" aria-label="Close"> <span aria-hidden="true">&times;</span> </button></div><div class="toast-body text-center pt-0"><p class="pl-2 pr-2 mb-3">A new version of content is available.</p><button type="button" class="btn btn-primary" aria-label="Update"> Update </button></div></div><script src="https://cdn.jsdelivr.net/npm/simple-jekyll-search@1.10.0/dest/simple-jekyll-search.min.js"></script> <script> SimpleJekyllSearch({ searchInput: document.getElementById('search-input'), resultsContainer: document.getElementById('search-results'), json: '/assets/js/data/search.json', searchResultTemplate: '<div class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-lg-4 pr-lg-4 pl-xl-0 pr-xl-0"> <a href="{url}">{title}</a><div class="post-meta d-flex flex-column flex-sm-row text-muted mt-1 mb-1"> {categories} {tags}</div><p>{snippet}</p></div>', noResultsText: '<p class="mt-5">Oops! No results found.</p>', templateMiddleware: function(prop, value, template) { if (prop === 'categories') { if (value === '') { return `${value}`; } else { return `<div class="mr-sm-4"><i class="far fa-folder fa-fw"></i>${value}</div>`; } } if (prop === 'tags') { if (value === '') { return `${value}`; } else { return `<div><i class="fa fa-tag fa-fw"></i>${value}</div>`; } } } }); </script> <script src="https://cdn.jsdelivr.net/combine/npm/magnific-popup@1/dist/jquery.magnific-popup.min.js,npm/lozad/dist/lozad.min.js,npm/clipboard@2/dist/clipboard.min.js"></script> <script src="https://cdn.jsdelivr.net/combine/npm/dayjs@1/dayjs.min.js,npm/dayjs@1/locale/en.min.js,npm/dayjs@1/plugin/relativeTime.min.js,npm/dayjs@1/plugin/localizedFormat.min.js"></script> <script defer src="/assets/js/dist/post.min.js"></script> <script src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.bundle.min.js"></script> <script defer src="/app.js"></script>
